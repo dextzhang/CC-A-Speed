@@ -1,0 +1,8 @@
+{
+  "appId": "com.ccaspeed.app",
+  "appName": "CC A Speed",
+  "webDir": "www",
+  "server": {
+    "androidScheme": "https"
+  }
+}

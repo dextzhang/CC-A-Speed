@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="zh-CN">
+  <head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <meta name="theme-color" content="#0f172a">
+    <title>CC A Speed</title>
+    <link rel="stylesheet" href="styles.css">
+  </head>
+  <body>
+    <main class="app-shell">
+      <section class="topbar" aria-label="应用标题">
+        <div>
+          <p class="eyebrow">Android speed test lab</p>
+          <h1>CC A Speed</h1>
+        </div>
+        <button class="icon-button" id="settingsToggle" type="button" aria-label="测速设置" title="测速设置">
+          <span aria-hidden="true">⚙</span>
+        </button>
+      </section>
+
+      <section class="meter-panel" aria-label="测速结果">
+        <div class="status-row">
+          <span class="status-dot" id="statusDot" aria-hidden="true"></span>
+          <span id="statusText">准备测速</span>
+        </div>
+
+        <div class="speed-readout">
+          <span class="speed-number" id="downloadValue">--</span>
+          <span class="speed-unit">Mbps</span>
+        </div>
+        <p class="readout-label">下载速度</p>
+
+        <div class="metric-grid">
+          <article class="metric-card">
+            <span class="metric-label">延迟</span>
+            <strong id="latencyValue">-- ms</strong>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">上传</span>
+            <strong id="uploadValue">-- Mbps</strong>
+          </article>
+          <article class="metric-card">
+            <span class="metric-label">网络</span>
+            <strong id="networkValue">检测中</strong>
+          </article>
+        </div>
+
+        <button class="primary-action" id="startButton" type="button">
+          <span id="startIcon" aria-hidden="true">▶</span>
+          <span id="startLabel">开始测速</span>
+        </button>
+      </section>
+
+      <section class="settings-panel" id="settingsPanel" aria-label="测速设置" hidden>
+        <label>
+          下载测试大小
+          <select id="downloadBytes">
+            <option value="5000000">5 MB</option>
+            <option value="10000000" selected>10 MB</option>
+            <option value="25000000">25 MB</option>
+          </select>
+        </label>
+        <label>
+          上传测试大小
+          <select id="uploadBytes">
+            <option value="1000000">1 MB</option>
+            <option value="3000000" selected>3 MB</option>
+            <option value="5000000">5 MB</option>
+          </select>
+        </label>
+      </section>
+
+      <section class="history-panel" aria-label="测速历史">
+        <div class="section-heading">
+          <h2>最近记录</h2>
+          <button class="text-button" id="clearHistory" type="button">清空</button>
+        </div>
+        <ol class="history-list" id="historyList"></ol>
+      </section>
+    </main>
+
+    <script src="app.js"></script>
+  </body>
+</html>

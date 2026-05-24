@@ -1,0 +1,20 @@
+{
+  "name": "cc-a-speed",
+  "version": "0.1.0",
+  "private": true,
+  "description": "A tiny HTML/CSS/JS network speed test wrapped with Capacitor for Android.",
+  "scripts": {
+    "serve": "npx http-server www -p 4173",
+    "cap:add:android": "npx cap add android",
+    "cap:sync": "npx cap sync android",
+    "cap:open": "npx cap open android"
+  },
+  "dependencies": {
+    "@capacitor/android": "^7.0.0",
+    "@capacitor/core": "^7.0.0"
+  },
+  "devDependencies": {
+    "@capacitor/cli": "^7.0.0",
+    "http-server": "^14.1.1"
+  }
+}

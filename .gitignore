@@ -1,0 +1,12 @@
+node_modules/
+.npm-cache/
+.gradle/
+
+android/.gradle/
+android/build/
+android/app/build/
+
+*.apk
+*.aab
+local.properties
+serve.log

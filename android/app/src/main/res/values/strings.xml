@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">CC A Speed</string>
+    <string name="title_activity_main">CC A Speed</string>
+    <string name="package_name">com.ccaspeed.app</string>
+    <string name="custom_url_scheme">com.ccaspeed.app</string>
+</resources>
