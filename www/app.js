@@ -56,14 +56,22 @@ function nowIso() {
 
 function readJson(key, fallback) {
   try {
-    return JSON.parse(localStorage.getItem(key)) || fallback;
+    const value = JSON.parse(localStorage.getItem(key));
+    return value !== null && value !== undefined ? value : fallback;
   } catch {
     return fallback;
   }
 }
 
 function writeJson(key, value) {
-  localStorage.setItem(key, JSON.stringify(value));
+  try {
+    localStorage.setItem(key, JSON.stringify(value));
+  } catch (e) {
+    if (e.name === 'QuotaExceededError' || e.code === 22) {
+      throw new Error('本地存储空间不足，请删除部分笔记后重试');
+    }
+    throw e;
+  }
 }
 
 function normalizeUrlPart(part) {
@@ -86,11 +94,11 @@ function backupPayload() {
 
 function encodeBase64Unicode(text) {
   const bytes = new TextEncoder().encode(text);
-  let binary = '';
+  const chunks = [];
   bytes.forEach((byte) => {
-    binary += String.fromCharCode(byte);
+    chunks.push(String.fromCharCode(byte));
   });
-  return btoa(binary);
+  return btoa(chunks.join(''));
 }
 
 function decodeBase64Unicode(text) {
@@ -254,6 +262,7 @@ function newNote() {
 }
 
 function deleteActiveNote() {
+  if (!confirm('确定删除这条笔记吗？')) return;
   if (notes.length <= 1) {
     notes[0].title = '新的笔记';
     notes[0].body = '';
@@ -338,6 +347,9 @@ async function fetchGithubFile() {
 
   if (response.status === 404) return null;
   if (!response.ok) {
+    if (response.status === 403) {
+      throw new Error('GitHub 请求被拒绝 (403)，可能是 Token 权限不足或 API 限流，请稍后重试');
+    }
     throw new Error(`GitHub 读取失败: HTTP ${response.status}`);
   }
   return response.json();
@@ -367,6 +379,9 @@ async function pushGithub() {
   });
 
   if (!response.ok) {
+    if (response.status === 403) {
+      throw new Error('GitHub 请求被拒绝 (403)，可能是 Token 权限不足或 API 限流，请稍后重试');
+    }
     throw new Error(`GitHub 推送失败: HTTP ${response.status}`);
   }
 }
@@ -374,8 +389,12 @@ async function pushGithub() {
 async function pullGithub() {
   const file = await fetchGithubFile();
   if (!file?.content) return [];
-  const payload = JSON.parse(decodeBase64Unicode(file.content));
-  return Array.isArray(payload.notes) ? payload.notes : [];
+  try {
+    const payload = JSON.parse(decodeBase64Unicode(file.content));
+    return Array.isArray(payload.notes) ? payload.notes : [];
+  } catch {
+    throw new Error('GitHub 备份文件内容损坏，无法解析');
+  }
 }
 
 function mergeRemoteNotes(remoteNotes) {
@@ -391,7 +410,9 @@ function mergeRemoteNotes(remoteNotes) {
       return;
     }
     if (remote.updatedAt > local.updatedAt) {
-      Object.assign(local, remote);
+      local.title = remote.title ?? local.title;
+      local.body = remote.body ?? local.body;
+      local.updatedAt = remote.updatedAt;
       changed += 1;
     }
   });
@@ -409,25 +430,40 @@ function mergeRemoteNotes(remoteNotes) {
   return changed;
 }
 
+function setSyncButtons(disabled) {
+  els.pushButton.disabled = disabled;
+  els.pullButton.disabled = disabled;
+}
+
 async function pushSelectedTargets() {
   saveActiveNote();
   collectSettings();
   const targets = validateTargets();
   setSyncStatus('正在推送...');
+  setSyncButtons(true);
 
-  const jobs = targets.map((target) => (target === 'webdav' ? pushWebdav() : pushGithub()));
-  await Promise.all(jobs);
-  setSyncStatus(`推送完成 ${new Date().toLocaleTimeString('zh-CN')}`);
+  try {
+    const jobs = targets.map((target) => (target === 'webdav' ? pushWebdav() : pushGithub()));
+    await Promise.all(jobs);
+    setSyncStatus(`推送完成 ${new Date().toLocaleTimeString('zh-CN')}`);
+  } finally {
+    setSyncButtons(false);
+  }
 }
 
 async function pullSelectedTargets() {
   collectSettings();
   const targets = validateTargets();
   setSyncStatus('正在拉取...');
+  setSyncButtons(true);
 
-  const groups = await Promise.all(targets.map((target) => (target === 'webdav' ? pullWebdav() : pullGithub())));
-  const changed = groups.reduce((sum, group) => sum + mergeRemoteNotes(group), 0);
-  setSyncStatus(`拉取完成，更新 ${changed} 条`);
+  try {
+    const groups = await Promise.all(targets.map((target) => (target === 'webdav' ? pullWebdav() : pullGithub())));
+    const changed = groups.reduce((sum, group) => sum + mergeRemoteNotes(group), 0);
+    setSyncStatus(`拉取完成，更新 ${changed} 条`);
+  } finally {
+    setSyncButtons(false);
+  }
 }
 
 async function runSync(action) {

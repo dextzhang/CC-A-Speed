@@ -585,3 +585,54 @@ Actions -> Build Android Debug APK -> 最新运行记录 -> Artifacts
 ```
 
 这就是一条非常轻量、适合个人开发和 AI 辅助开发的安卓小应用路线。
+
+## 24. 云打包推送速查
+
+三步完成，不需要多余操作：
+
+```powershell
+git add .
+git commit -m "feat: update app"
+git push origin main
+```
+
+推送后去 GitHub Actions 页面查看构建状态，构建成功后下载 APK。
+
+## 25. 常见执行错误
+
+### PowerShell 不支持 &&
+
+PowerShell 5 中 `&&` 不是合法语法，会报错：
+
+```text
+标记"&&"不是此版本中的有效语句分隔符
+```
+
+正确写法用分号：
+
+```powershell
+cd c:\Users\xxx\project; git status
+```
+
+或者直接省略 `cd`，用 `-cwd` 参数指定目录。
+
+### git push 偶尔失败先重试
+
+`git push` 遇到以下错误时，先重试一次再判断：
+
+```text
+fatal: unable to access '...': Recv failure: Connection was reset
+fatal: unable to access '...': Failed to connect to ... port 443
+```
+
+大多数情况是临时网络波动，重试即可通过。不要立刻去跑 ping、curl 等诊断命令，那只会浪费时间。
+
+### 不要过度诊断网络
+
+如果 `git push` 失败：
+
+1. 重试一次
+2. 仍然失败 → 检查是否需要配置代理
+3. 配了代理仍失败 → 再考虑网络环境问题
+
+不要在第一步失败时就跑一堆网络诊断工具。
