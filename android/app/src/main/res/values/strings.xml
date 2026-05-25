@@ -1,7 +1,7 @@
 <?xml version='1.0' encoding='utf-8'?>
 <resources>
-    <string name="app_name">CC A Speed</string>
-    <string name="title_activity_main">CC A Speed</string>
-    <string name="package_name">com.ccaspeed.app</string>
-    <string name="custom_url_scheme">com.ccaspeed.app</string>
+    <string name="app_name">CC Sync Notes</string>
+    <string name="title_activity_main">CC Sync Notes</string>
+    <string name="package_name">com.ccsyncnotes.app</string>
+    <string name="custom_url_scheme">com.ccsyncnotes.app</string>
 </resources>

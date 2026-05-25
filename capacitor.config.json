@@ -1,6 +1,6 @@
 {
-  "appId": "com.ccaspeed.app",
-  "appName": "CC A Speed",
+  "appId": "com.ccsyncnotes.app",
+  "appName": "CC Sync Notes",
   "webDir": "www",
   "server": {
     "androidScheme": "https"

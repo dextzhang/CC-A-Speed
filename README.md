@@ -1,75 +1,78 @@
-# CC A Speed
+# CC Sync Notes
 
-一个最小化的安卓测速学习项目：前端使用纯 HTML/CSS/JavaScript，安卓打包使用 Capacitor。
+一个用 HTML/CSS/JavaScript + Capacitor 做的安卓记事本原型。当前版本是本地优先设计，笔记默认保存在手机本地浏览器存储中，同步目标可以多选：
 
-## 项目结构
+- 坚果云 WebDAV
+- GitHub 仓库文件备份
 
-- `www/index.html`：测速 App 页面
-- `www/styles.css`：界面样式
-- `www/app.js`：测速逻辑
-- `capacitor.config.json`：Capacitor 安卓壳配置
-- `package.json`：依赖和脚本
+## 已实现
+
+- 新建、编辑、删除本地笔记
+- 本地自动持久化
+- 同步目标多选配置
+- 坚果云 WebDAV 推送/拉取 JSON 备份
+- GitHub Contents API 推送/拉取 JSON 备份
+- 拉取时按 `updatedAt` 合并较新的笔记
+
+## 需要你在坚果云准备的东西
+
+| 项目 | 怎么做 | App 里填什么 |
+| --- | --- | --- |
+| 坚果云账号 | 使用现有账号即可 | 坚果云账号邮箱 |
+| 同步目录 | 在坚果云根目录新建 `CCSyncNotes` | `https://dav.jianguoyun.com/dav/CCSyncNotes` |
+| 应用密码 | 账户信息 -> 安全选项 -> 第三方应用管理 -> 添加应用密码 | 填到“应用密码”，不要填登录密码 |
+| 备份文件名 | 默认即可 | `cc-notes-backup.json` |
+
+注意：这个 Web 原型直接用 `fetch` 调 WebDAV。Android WebView 内通常可以测试实际效果，但桌面浏览器预览可能被 WebDAV 服务的 CORS 策略拦住。后续如果要做成更稳的正式版，建议加 Capacitor 原生 HTTP 插件或写一个很小的 Android 原生同步插件。
+
+## GitHub 备份准备
+
+| 项目 | 建议 |
+| --- | --- |
+| 仓库 | 新建一个私有仓库，例如 `notes-backup` |
+| 文件路径 | 默认 `cc-notes-backup.json` |
+| Token | Fine-grained personal access token，只给目标仓库 Contents: Read and write |
+| 分支 | 默认 `main` |
 
 ## 本地预览
-
-```powershell
-npm install
-npm run serve
-```
-
-然后打开：
-
-```text
-http://localhost:4173
-```
-
-如果 PowerShell 提示 `npm.ps1` 被禁止执行，把上面的 `npm` 换成 `npm.cmd`：
 
 ```powershell
 npm.cmd install --cache .npm-cache
 npm.cmd run serve
 ```
 
-## 生成安卓工程
+打开：
 
-```powershell
-npm install
-npm run cap:add:android
-npm run cap:sync
-npm run cap:open
+```text
+http://127.0.0.1:4173
 ```
 
-打开 Android Studio 后，连接手机或启动模拟器，点击 Run 即可安装测试。
+## 同步到安卓工程
 
-## GitHub Actions 云打包 APK
+修改 `www/` 后执行：
 
-项目已包含：
+```powershell
+npm.cmd run cap:sync
+```
+
+## GitHub Actions 云打包
+
+仓库包含：
 
 ```text
 .github/workflows/android-debug-apk.yml
 ```
 
-把项目推送到 GitHub 的 `main` 分支后，GitHub 会自动构建 debug APK。也可以在仓库页面手动运行：
+推送到 `main` 后会自动构建 debug APK。构建产物名称：
 
 ```text
-Actions -> Build Android Debug APK -> Run workflow
+cc-sync-notes-debug-apk
 ```
 
-构建完成后，在对应的 workflow run 页面下载 artifact：
+## 下一步建议
 
-```text
-cc-a-speed-debug-apk
-```
-
-里面的 `app-debug.apk` 可以安装到 Android 手机上测试。Debug APK 适合自测；正式发布还需要 release 签名。
-
-## 学习重点
-
-第一版故意保持简单，主要帮助你理解：
-
-- Web 页面如何变成 Android App
-- Capacitor 项目的基本文件结构
-- JavaScript 如何发起测速请求
-- Android Studio 如何打包和安装 APK
-
-测速默认使用 Cloudflare 的公开测速端点。实际测速结果会受到网络、测试服务器、浏览器/WebView 限制影响，适合学习流程，不等同于专业测速平台。
+- 改用 Capacitor Preferences 或 SQLite 保存数据
+- 加自动同步队列和失败重试
+- 把 WebDAV/GitHub token 放进 Android Keystore
+- 冲突时生成并展示冲突副本，而不是只按更新时间覆盖
+- 支持把每条笔记导出为独立 Markdown 文件

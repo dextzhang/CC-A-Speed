@@ -3,80 +3,113 @@
   <head>
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="theme-color" content="#0f172a">
-    <title>CC A Speed</title>
+    <meta name="theme-color" content="#f7f4ee">
+    <title>CC Sync Notes</title>
     <link rel="stylesheet" href="styles.css">
   </head>
   <body>
     <main class="app-shell">
-      <section class="topbar" aria-label="应用标题">
+      <header class="topbar">
         <div>
-          <p class="eyebrow">Android speed test lab</p>
-          <h1>CC A Speed</h1>
+          <p class="eyebrow">Local first notes</p>
+          <h1>CC Sync Notes</h1>
         </div>
-        <button class="icon-button" id="settingsToggle" type="button" aria-label="测速设置" title="测速设置">
-          <span aria-hidden="true">⚙</span>
-        </button>
+        <button class="icon-button" id="newNoteButton" type="button" aria-label="新建笔记" title="新建笔记">+</button>
+      </header>
+
+      <section class="editor-panel" aria-label="笔记编辑器">
+        <div class="editor-head">
+          <label class="title-field">
+            <span>标题</span>
+            <input id="noteTitle" type="text" autocomplete="off" placeholder="新的想法">
+          </label>
+          <button class="ghost-button danger" id="deleteNoteButton" type="button">删除</button>
+        </div>
+        <textarea id="noteBody" spellcheck="false" placeholder="写点什么，先存在手机本地，再同步到坚果云或 GitHub。"></textarea>
+        <div class="editor-actions">
+          <span id="saveState">已准备</span>
+          <button class="primary-button" id="saveNoteButton" type="button">保存笔记</button>
+        </div>
       </section>
 
-      <section class="meter-panel" aria-label="测速结果">
-        <div class="status-row">
-          <span class="status-dot" id="statusDot" aria-hidden="true"></span>
-          <span id="statusText">准备测速</span>
-        </div>
-
-        <div class="speed-readout">
-          <span class="speed-number" id="downloadValue">--</span>
-          <span class="speed-unit">Mbps</span>
-        </div>
-        <p class="readout-label">下载速度</p>
-
-        <div class="metric-grid">
-          <article class="metric-card">
-            <span class="metric-label">延迟</span>
-            <strong id="latencyValue">-- ms</strong>
-          </article>
-          <article class="metric-card">
-            <span class="metric-label">上传</span>
-            <strong id="uploadValue">-- Mbps</strong>
-          </article>
-          <article class="metric-card">
-            <span class="metric-label">网络</span>
-            <strong id="networkValue">检测中</strong>
-          </article>
-        </div>
-
-        <button class="primary-action" id="startButton" type="button">
-          <span id="startIcon" aria-hidden="true">▶</span>
-          <span id="startLabel">开始测速</span>
-        </button>
-      </section>
-
-      <section class="settings-panel" id="settingsPanel" aria-label="测速设置" hidden>
-        <label>
-          下载测试大小
-          <select id="downloadBytes">
-            <option value="5000000">5 MB</option>
-            <option value="10000000" selected>10 MB</option>
-            <option value="25000000">25 MB</option>
-          </select>
-        </label>
-        <label>
-          上传测试大小
-          <select id="uploadBytes">
-            <option value="1000000">1 MB</option>
-            <option value="3000000" selected>3 MB</option>
-            <option value="5000000">5 MB</option>
-          </select>
-        </label>
-      </section>
-
-      <section class="history-panel" aria-label="测速历史">
+      <section class="sync-panel" aria-label="同步设置">
         <div class="section-heading">
-          <h2>最近记录</h2>
-          <button class="text-button" id="clearHistory" type="button">清空</button>
+          <h2>同步目标</h2>
+          <span id="syncStatus">未同步</span>
         </div>
-        <ol class="history-list" id="historyList"></ol>
+
+        <div class="target-row">
+          <label class="target-toggle">
+            <input id="enableWebdav" type="checkbox">
+            <span>坚果云 WebDAV</span>
+          </label>
+          <label class="target-toggle">
+            <input id="enableGithub" type="checkbox">
+            <span>GitHub 备份</span>
+          </label>
+        </div>
+
+        <details class="config-block" open>
+          <summary>坚果云 WebDAV</summary>
+          <div class="form-grid">
+            <label>
+              WebDAV 地址
+              <input id="webdavUrl" type="url" placeholder="https://dav.jianguoyun.com/dav/CCSyncNotes">
+            </label>
+            <label>
+              坚果云账号
+              <input id="webdavUser" type="email" autocomplete="username" placeholder="你的邮箱">
+            </label>
+            <label>
+              应用密码
+              <input id="webdavPass" type="password" autocomplete="current-password" placeholder="不是登录密码">
+            </label>
+            <label>
+              备份文件名
+              <input id="webdavFile" type="text" placeholder="cc-notes-backup.json">
+            </label>
+          </div>
+        </details>
+
+        <details class="config-block">
+          <summary>GitHub</summary>
+          <div class="form-grid">
+            <label>
+              Owner
+              <input id="githubOwner" type="text" autocomplete="off" placeholder="dextzhang">
+            </label>
+            <label>
+              Repo
+              <input id="githubRepo" type="text" autocomplete="off" placeholder="notes-backup">
+            </label>
+            <label>
+              Branch
+              <input id="githubBranch" type="text" autocomplete="off" placeholder="main">
+            </label>
+            <label>
+              文件路径
+              <input id="githubPath" type="text" autocomplete="off" placeholder="cc-notes-backup.json">
+            </label>
+            <label class="wide-field">
+              Fine-grained token
+              <input id="githubToken" type="password" autocomplete="off" placeholder="Contents: Read and write">
+            </label>
+          </div>
+        </details>
+
+        <div class="sync-actions">
+          <button class="ghost-button" id="saveSettingsButton" type="button">保存配置</button>
+          <button class="ghost-button" id="pullButton" type="button">拉取合并</button>
+          <button class="primary-button" id="pushButton" type="button">推送备份</button>
+        </div>
+      </section>
+
+      <section class="notes-panel" aria-label="笔记列表">
+        <div class="section-heading">
+          <h2>本地笔记</h2>
+          <strong id="noteCount">0</strong>
+        </div>
+        <ol class="note-list" id="noteList"></ol>
       </section>
     </main>
 

@@ -1,8 +1,8 @@
 {
-  "name": "cc-a-speed",
+  "name": "cc-sync-notes",
   "version": "0.1.0",
   "private": true,
-  "description": "A tiny HTML/CSS/JS network speed test wrapped with Capacitor for Android.",
+  "description": "A local-first Android notes prototype with optional WebDAV and GitHub sync.",
   "scripts": {
     "serve": "npx http-server www -p 4173",
     "cap:add:android": "npx cap add android",

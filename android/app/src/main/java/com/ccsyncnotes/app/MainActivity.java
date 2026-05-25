@@ -1,4 +1,4 @@
-package com.ccaspeed.app;
+package com.ccsyncnotes.app;
 
 import com.getcapacitor.BridgeActivity;
 
