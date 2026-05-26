@@ -422,6 +422,9 @@ CCToolbox.register({
     }
 
     async function ensureWebdavFolder() {
+      if (isAndroid) {
+        throw new Error('坚果云同步目录不存在。由于安卓平台的网络限制，请先在坚果云网页版或客户端中手动创建该文件夹（例如 "CCSyncNotes"），然后再进行同步。');
+      }
       const base = settings.webdavUrl.trim().replace(/\/+$/g, '');
       const response = await fetch(proxyWebdav(base + '/'), {
         method: 'PROPFIND',

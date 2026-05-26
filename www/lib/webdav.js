@@ -59,6 +59,10 @@ window.CCWebdav = (function() {
   }
 
   async function ensureFolderRecursive(folderPath) {
+    if (isAndroid) {
+      log('Android 环境跳过自动创建文件夹');
+      return;
+    }
     var parts = folderPath.replace(/^\/+|\/+$/g, '').split('/');
     var currentPath = '';
 
@@ -115,6 +119,9 @@ window.CCWebdav = (function() {
     log('PUT 响应', res.status);
 
     if (!res.ok) {
+      if (res.status === 409 && isAndroid) {
+        throw new Error('云端同步目录不存在。由于安卓平台的网络限制，请先在坚果云网页版或客户端中手动创建该文件夹（如 ' + parts.join('/') + '），然后再进行同步。');
+      }
       throw new Error('推送失败: HTTP ' + res.status);
     }
   }
