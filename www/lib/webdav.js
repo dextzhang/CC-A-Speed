@@ -1,5 +1,6 @@
 window.CCWebdav = (function() {
   var config = {};
+  var isAndroid = /Android/i.test(navigator.userAgent);
 
   function init(cfg) {
     config = {
@@ -20,7 +21,10 @@ window.CCWebdav = (function() {
     return 'Basic ' + encodeBase64(config.username + ':' + config.password);
   }
 
-  function proxyUrl(url) {
+  function requestUrl(url) {
+    if (isAndroid) {
+      return url;
+    }
     return '/api/webdav?url=' + encodeURIComponent(url);
   }
 
@@ -29,37 +33,64 @@ window.CCWebdav = (function() {
     return config.baseUrl + '/' + cleanPath;
   }
 
-  async function ensureFolder(folderPath) {
-    var folderUrl = config.baseUrl + '/' + folderPath.replace(/^\/+/, '');
+  async function createFolder(folderUrl) {
     try {
-      var res = await fetch(proxyUrl(folderUrl + '/'), {
-        method: 'PROPFIND',
-        headers: { Authorization: authHeader(), Depth: '0' }
+      var createUrl = folderUrl.endsWith('/') ? folderUrl : folderUrl + '/';
+      var createRes = await fetch(requestUrl(createUrl), {
+        method: 'MKCOL',
+        headers: { Authorization: authHeader() }
       });
-      if (res.status === 404) {
-        var createUrl = folderUrl.endsWith('/') ? folderUrl : folderUrl + '/';
-        var createRes = await fetch(proxyUrl(createUrl), {
-          method: 'MKCOL',
-          headers: { Authorization: authHeader() }
-        });
-        if (!createRes.ok && createRes.status !== 405) {
-          throw new Error('创建文件夹失败: HTTP ' + createRes.status);
-        }
+      if (createRes.status !== 201 && createRes.status !== 405) {
+        throw new Error('创建文件夹失败: HTTP ' + createRes.status);
       }
     } catch (e) {
-      if (!e.message.includes('创建文件夹')) throw e;
+      throw new Error('创建文件夹失败: ' + (e.message || e));
+    }
+  }
+
+  async function ensureFolderRecursive(folderPath) {
+    var parts = folderPath.replace(/^\/+|\/+$/g, '').split('/');
+    var currentPath = '';
+
+    for (var i = 0; i < parts.length; i++) {
+      var part = parts[i];
+      if (!part) continue;
+      if (currentPath) currentPath += '/';
+      currentPath += part;
+
+      var folderUrl = config.baseUrl + '/' + currentPath;
+      var exists = false;
+
+      try {
+        var checkRes = await fetch(requestUrl(folderUrl + '/'), {
+          method: 'PROPFIND',
+          headers: { Authorization: authHeader(), Depth: '0' }
+        });
+        if (checkRes.ok || checkRes.status === 405) {
+          exists = true;
+        }
+      } catch {}
+
+      if (!exists) {
+        await createFolder(folderUrl);
+      }
     }
   }
 
   async function push(path, data) {
     var url = fileUrl(path);
-    var payload = JSON.stringify(data, null, 2);
+    var payload;
+    if (typeof data === 'string') {
+      payload = data;
+    } else {
+      payload = JSON.stringify(data, null, 2);
+    }
 
-    var res = await fetch(proxyUrl(url), {
+    var res = await fetch(requestUrl(url), {
       method: 'PUT',
       headers: {
         Authorization: authHeader(),
-        'Content-Type': 'application/json; charset=utf-8'
+        'Content-Type': (typeof data === 'string' ? 'text/plain; charset=utf-8' : 'application/json; charset=utf-8')
       },
       body: payload
     });
@@ -67,15 +98,17 @@ window.CCWebdav = (function() {
     if (res.status === 409) {
       var parts = path.split('/');
       parts.pop();
-      await ensureFolder(parts.join('/'));
-      res = await fetch(proxyUrl(url), {
-        method: 'PUT',
-        headers: {
-          Authorization: authHeader(),
-          'Content-Type': 'application/json; charset=utf-8'
-        },
-        body: payload
-      });
+      if (parts.length > 0) {
+        await ensureFolderRecursive(parts.join('/'));
+        res = await fetch(requestUrl(url), {
+          method: 'PUT',
+          headers: {
+            Authorization: authHeader(),
+            'Content-Type': (typeof data === 'string' ? 'text/plain; charset=utf-8' : 'application/json; charset=utf-8')
+          },
+          body: payload
+        });
+      }
     }
 
     if (!res.ok) {
@@ -85,7 +118,7 @@ window.CCWebdav = (function() {
 
   async function pull(path) {
     var url = fileUrl(path);
-    var res = await fetch(proxyUrl(url), {
+    var res = await fetch(requestUrl(url), {
       method: 'GET',
       headers: { Authorization: authHeader() }
     });
@@ -95,16 +128,17 @@ window.CCWebdav = (function() {
       throw new Error('拉取失败: HTTP ' + res.status);
     }
 
+    var text = await res.text();
     try {
-      return await res.json();
+      return JSON.parse(text);
     } catch {
-      throw new Error('云端数据解析失败');
+      return text;
     }
   }
 
   async function exists(path) {
     var url = fileUrl(path);
-    var res = await fetch(proxyUrl(url), {
+    var res = await fetch(requestUrl(url), {
       method: 'GET',
       headers: { Authorization: authHeader() }
     });
@@ -113,7 +147,7 @@ window.CCWebdav = (function() {
 
   async function remove(path) {
     var url = fileUrl(path);
-    var res = await fetch(proxyUrl(url), {
+    var res = await fetch(requestUrl(url), {
       method: 'DELETE',
       headers: { Authorization: authHeader() }
     });
