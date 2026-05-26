@@ -118,9 +118,9 @@ proxy-server.js             开发时代理服务器（解决 CORS）
 
 ---
 
-## 4. 代理服务器
+## 4. 代理服务器 & 跨环境处理（重点！）
 
-### 4.1 位置与作用
+### 4.1 代理服务器（仅用于开发）
 
 文件：项目根目录的 `proxy-server.js`
 
@@ -128,6 +128,8 @@ proxy-server.js             开发时代理服务器（解决 CORS）
 
 1. **静态文件服务** — 提供 `www/` 目录下的 HTML/CSS/JS 文件
 2. **API 代理** — 将 `/api/webdav` 和 `/api/github` 的请求转发到对应服务器，绕过 CORS
+
+**注意：代理服务器仅在开发时使用！**
 
 ### 4.2 启动方式
 
@@ -146,7 +148,7 @@ npm run serve
 | `/api/webdav?url=<encoded>` | 转发到坚果云 WebDAV | `/api/webdav?url=https%3A//dav.jianguoyun.com/dav/CCSyncNotes/test.json` |
 | `/api/github?url=<encoded>` | 转发到 GitHub API | `/api/github?url=https%3A//api.github.com/repos/...` |
 
-### 4.4 代理工作流程
+### 4.4 代理工作流程（浏览器开发阶段）
 
 ```javascript
 // 1. 浏览器发送请求（同源，无 CORS 问题）
@@ -161,6 +163,34 @@ fetch('/api/webdav?url=' + encodeURIComponent('https://dav.jianguoyun.com/dav/..
 // 4. 将原始请求头和 body 转发给目标服务器
 // 5. 收到响应后添加 CORS 头返回给浏览器
 ```
+
+### 4.5 浏览器 vs 安卓：两套处理方式
+
+| 环境 | CORS | 代理服务器 | 请求方式 |
+|------|------|-----------|---------|
+| 桌面浏览器开发 | 有 | 需要 | 走 `/api/webdav?url=...` 代理 |
+| 安卓 APK | 无 | 不存在 | 直接请求真实地址 `https://dav.jianguoyun.com/...` |
+
+**代码实现方式**（参考 [lib/webdav.js](file:///c:/Users/Administrator/Desktop/CC-A-speed/www/lib/webdav.js)）：
+
+```javascript
+// 检测安卓环境
+const isAndroid = /Android/i.test(navigator.userAgent);
+
+function requestUrl(url) {
+  // 安卓直接请求
+  if (isAndroid) {
+    return url;
+  }
+  // 浏览器走代理
+  return '/api/webdav?url=' + encodeURIComponent(url);
+}
+```
+
+### 4.6 记住原则
+1. 开发调试时：开启代理服务器，浏览器走代理
+2. 打包进 APK 后：代码自动检测，安卓直接请求，代理服务器不需要参与
+3. 所有涉及外部 API 的功能，必须在设计时就考虑到两套处理方式！
 
 ---
 
