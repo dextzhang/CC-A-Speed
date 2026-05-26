@@ -38,6 +38,10 @@ CCToolbox.register({
             <span>坚果云 WebDAV</span>
           </label>
           <label class="target-toggle">
+            <input id="sn-enableGitee" type="checkbox">
+            <span>Gitee 同步</span>
+          </label>
+          <label class="target-toggle">
             <input id="sn-enableGithub" type="checkbox">
             <span>GitHub 备份</span>
           </label>
@@ -61,6 +65,32 @@ CCToolbox.register({
             <label>
               备份文件名
               <input id="sn-webdavFile" type="text" placeholder="cc-notes-backup.json">
+            </label>
+          </div>
+        </details>
+
+        <details class="config-block">
+          <summary>Gitee 同步</summary>
+          <div class="form-grid">
+            <label>
+              Owner
+              <input id="sn-giteeOwner" type="text" autocomplete="off" placeholder="你的 Gitee 用户名">
+            </label>
+            <label>
+              Repo
+              <input id="sn-giteeRepo" type="text" autocomplete="off" placeholder="仓库名称">
+            </label>
+            <label>
+              Branch
+              <input id="sn-giteeBranch" type="text" autocomplete="off" placeholder="master">
+            </label>
+            <label>
+              文件路径
+              <input id="sn-giteePath" type="text" autocomplete="off" placeholder="cc-notes-backup.json">
+            </label>
+            <label class="wide-field">
+              私人令牌 (Access Token)
+              <input id="sn-giteeToken" type="password" autocomplete="off" placeholder="你的 Gitee 私人令牌">
             </label>
           </div>
         </details>
@@ -116,6 +146,7 @@ CCToolbox.register({
     const defaultSettings = {
       enableWebdav: true,
       enableGithub: false,
+      enableGitee: false,
       webdavUrl: 'https://dav.jianguoyun.com/dav/CCSyncNotes',
       webdavUser: '',
       webdavPass: '',
@@ -124,7 +155,12 @@ CCToolbox.register({
       githubRepo: '',
       githubBranch: 'main',
       githubPath: 'cc-notes-backup.json',
-      githubToken: ''
+      githubToken: '',
+      giteeOwner: '',
+      giteeRepo: '',
+      giteeBranch: 'master',
+      giteePath: 'cc-notes-backup.json',
+      giteeToken: ''
     };
 
     const q = (sel) => document.querySelector(sel);
@@ -132,7 +168,13 @@ CCToolbox.register({
     const els = {
       deleteNoteButton: q('#sn-deleteNoteButton'),
       enableGithub: q('#sn-enableGithub'),
+      enableGitee: q('#sn-enableGitee'),
       enableWebdav: q('#sn-enableWebdav'),
+      giteeBranch: q('#sn-giteeBranch'),
+      giteeOwner: q('#sn-giteeOwner'),
+      giteePath: q('#sn-giteePath'),
+      giteeRepo: q('#sn-giteeRepo'),
+      giteeToken: q('#sn-giteeToken'),
       githubBranch: q('#sn-githubBranch'),
       githubOwner: q('#sn-githubOwner'),
       githubPath: q('#sn-githubPath'),
@@ -283,6 +325,7 @@ CCToolbox.register({
       settings = {
         enableWebdav: els.enableWebdav.checked,
         enableGithub: els.enableGithub.checked,
+        enableGitee: els.enableGitee.checked,
         webdavUrl: els.webdavUrl.value.trim(),
         webdavUser: els.webdavUser.value.trim(),
         webdavPass: els.webdavPass.value,
@@ -291,7 +334,12 @@ CCToolbox.register({
         githubRepo: els.githubRepo.value.trim(),
         githubBranch: els.githubBranch.value.trim() || defaultSettings.githubBranch,
         githubPath: els.githubPath.value.trim() || defaultSettings.githubPath,
-        githubToken: els.githubToken.value.trim()
+        githubToken: els.githubToken.value.trim(),
+        giteeOwner: els.giteeOwner.value.trim(),
+        giteeRepo: els.giteeRepo.value.trim(),
+        giteeBranch: els.giteeBranch.value.trim() || defaultSettings.giteeBranch,
+        giteePath: els.giteePath.value.trim() || defaultSettings.giteePath,
+        giteeToken: els.giteeToken.value.trim()
       };
       writeJson(settingsKey, settings);
     }
@@ -409,6 +457,12 @@ CCToolbox.register({
         }
         targets.push('webdav');
       }
+      if (settings.enableGitee) {
+        if (!settings.giteeOwner || !settings.giteeRepo || !settings.giteeToken) {
+          throw new Error('请补全 Gitee Owner、Repo 和私人令牌');
+        }
+        targets.push('gitee');
+      }
       if (settings.enableGithub) {
         if (!settings.githubOwner || !settings.githubRepo || !settings.githubToken) {
           throw new Error('请补全 GitHub owner、repo 和 token');
@@ -509,6 +563,67 @@ CCToolbox.register({
 
       const payload = await response.json();
       return Array.isArray(payload.notes) ? payload.notes : [];
+    }
+
+    function giteeApiUrl() {
+      const owner = normalizeUrlPart(settings.giteeOwner);
+      const repo = normalizeUrlPart(settings.giteeRepo);
+      const path = settings.giteePath.split('/').map(encodeURIComponent).join('/');
+      return `https://gitee.com/api/v5/repos/${owner}/${repo}/contents/${path}`;
+    }
+
+    async function fetchGiteeFile() {
+      const url = `${giteeApiUrl()}?access_token=${encodeURIComponent(settings.giteeToken)}&ref=${encodeURIComponent(settings.giteeBranch)}`;
+      const response = await fetch(url);
+
+      if (response.status === 404) return null;
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          throw new Error('Gitee 请求被拒绝 (401/403)，请检查您的私人令牌权限');
+        }
+        throw new Error(`Gitee 读取失败: HTTP ${response.status}`);
+      }
+      return response.json();
+    }
+
+    async function pushGitee() {
+      const existing = await fetchGiteeFile();
+      const body = {
+        access_token: settings.giteeToken,
+        message: 'chore: sync cc notes backup',
+        content: encodeBase64Unicode(JSON.stringify(backupPayload(), null, 2)),
+        branch: settings.giteeBranch
+      };
+
+      if (existing?.sha) {
+        body.sha = existing.sha;
+      }
+
+      const response = await fetch(giteeApiUrl(), {
+        method: 'PUT',
+        headers: {
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(body)
+      });
+
+      if (!response.ok) {
+        if (response.status === 401 || response.status === 403) {
+          throw new Error('Gitee 推送被拒绝 (401/403)，请检查您的私人令牌权限');
+        }
+        throw new Error(`Gitee 推送失败: HTTP ${response.status}`);
+      }
+    }
+
+    async function pullGitee() {
+      const file = await fetchGiteeFile();
+      if (!file?.content) return [];
+      try {
+        const payload = JSON.parse(decodeBase64Unicode(file.content));
+        return Array.isArray(payload.notes) ? payload.notes : [];
+      } catch {
+        throw new Error('Gitee 备份文件内容损坏，无法解析');
+      }
     }
 
     function githubApiUrl() {
@@ -626,7 +741,11 @@ CCToolbox.register({
       setSyncButtons(true);
 
       try {
-        const jobs = targets.map((target) => (target === 'webdav' ? pushWebdav() : pushGithub()));
+        const jobs = targets.map((target) => {
+          if (target === 'webdav') return pushWebdav();
+          if (target === 'gitee') return pushGitee();
+          return pushGithub();
+        });
         await Promise.all(jobs);
         setSyncStatus(`推送完成 ${new Date().toLocaleTimeString('zh-CN')}`);
       } finally {
@@ -641,7 +760,11 @@ CCToolbox.register({
       setSyncButtons(true);
 
       try {
-        const groups = await Promise.all(targets.map((target) => (target === 'webdav' ? pullWebdav() : pullGithub())));
+        const groups = await Promise.all(targets.map((target) => {
+          if (target === 'webdav') return pullWebdav();
+          if (target === 'gitee') return pullGitee();
+          return pullGithub();
+        }));
         const changed = groups.reduce((sum, group) => sum + mergeRemoteNotes(group), 0);
         setSyncStatus(`拉取完成，更新 ${changed} 条`);
       } finally {
