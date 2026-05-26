@@ -8,6 +8,11 @@ window.CCWebdav = (function() {
       username: cfg.username || '',
       password: cfg.password || ''
     };
+    log('WebDAV init', { baseUrl: config.baseUrl, isAndroid });
+  }
+
+  function log(...args) {
+    console.log('[CCWebdav]', ...args);
   }
 
   function encodeBase64(text) {
@@ -23,9 +28,12 @@ window.CCWebdav = (function() {
 
   function requestUrl(url) {
     if (isAndroid) {
+      log('请求地址（安卓直接）', url);
       return url;
     }
-    return '/api/webdav?url=' + encodeURIComponent(url);
+    var proxyUrl = '/api/webdav?url=' + encodeURIComponent(url);
+    log('请求地址（代理）', proxyUrl);
+    return proxyUrl;
   }
 
   function fileUrl(path) {
@@ -34,12 +42,14 @@ window.CCWebdav = (function() {
   }
 
   async function createFolder(folderUrl) {
+    log('创建文件夹', folderUrl);
     try {
       var createUrl = folderUrl.endsWith('/') ? folderUrl : folderUrl + '/';
       var createRes = await fetch(requestUrl(createUrl), {
         method: 'MKCOL',
         headers: { Authorization: authHeader() }
       });
+      log('MKCOL 响应', createRes.status);
       if (createRes.status !== 201 && createRes.status !== 405) {
         throw new Error('创建文件夹失败: HTTP ' + createRes.status);
       }
@@ -59,20 +69,19 @@ window.CCWebdav = (function() {
       currentPath += part;
 
       var folderUrl = config.baseUrl + '/' + currentPath;
-      var exists = false;
-
+      log('检查文件夹', folderUrl);
+      
       try {
-        var checkRes = await fetch(requestUrl(folderUrl + '/'), {
-          method: 'PROPFIND',
-          headers: { Authorization: authHeader(), Depth: '0' }
+        // 先用 MKCOL 创建（如果已存在会返回 405，不影响）
+        var createUrl = folderUrl.endsWith('/') ? folderUrl : folderUrl + '/';
+        var createRes = await fetch(requestUrl(createUrl), {
+          method: 'MKCOL',
+          headers: { Authorization: authHeader() }
         });
-        if (checkRes.ok || checkRes.status === 405) {
-          exists = true;
-        }
-      } catch {}
-
-      if (!exists) {
-        await createFolder(folderUrl);
+        log('文件夹 MKCOL', createRes.status);
+      } catch (e) {
+        // 忽略 MKCOL 错误（可能文件夹已存在）
+        log('MKCOL 忽略错误', e);
       }
     }
   }
@@ -85,6 +94,14 @@ window.CCWebdav = (function() {
     } else {
       payload = JSON.stringify(data, null, 2);
     }
+    log('推送', path, payload.length, 'bytes');
+
+    // 先确保父文件夹存在
+    var parts = path.split('/');
+    parts.pop();
+    if (parts.length > 0) {
+      await ensureFolderRecursive(parts.join('/'));
+    }
 
     var res = await fetch(requestUrl(url), {
       method: 'PUT',
@@ -95,21 +112,7 @@ window.CCWebdav = (function() {
       body: payload
     });
 
-    if (res.status === 409) {
-      var parts = path.split('/');
-      parts.pop();
-      if (parts.length > 0) {
-        await ensureFolderRecursive(parts.join('/'));
-        res = await fetch(requestUrl(url), {
-          method: 'PUT',
-          headers: {
-            Authorization: authHeader(),
-            'Content-Type': (typeof data === 'string' ? 'text/plain; charset=utf-8' : 'application/json; charset=utf-8')
-          },
-          body: payload
-        });
-      }
-    }
+    log('PUT 响应', res.status);
 
     if (!res.ok) {
       throw new Error('推送失败: HTTP ' + res.status);
@@ -118,10 +121,13 @@ window.CCWebdav = (function() {
 
   async function pull(path) {
     var url = fileUrl(path);
+    log('拉取', path);
     var res = await fetch(requestUrl(url), {
       method: 'GET',
       headers: { Authorization: authHeader() }
     });
+
+    log('GET 响应', res.status);
 
     if (res.status === 404) return null;
     if (!res.ok) {
