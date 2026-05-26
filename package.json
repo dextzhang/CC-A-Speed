@@ -1,10 +1,10 @@
 {
-  "name": "cc-sync-notes",
-  "version": "0.1.0",
+  "name": "cc-toolbox",
+  "version": "1.0.0",
   "private": true,
-  "description": "A local-first Android notes prototype with optional WebDAV and GitHub sync.",
+  "description": "CC 个人工具箱 - 轻量安卓工具集合，本地优先，按需同步。",
   "scripts": {
-    "serve": "npx http-server www -p 4173",
+    "serve": "node proxy-server.js",
     "cap:add:android": "npx cap add android",
     "cap:sync": "npx cap sync android",
     "cap:open": "npx cap open android"

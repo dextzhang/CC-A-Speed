@@ -1,10 +1,8 @@
 # CC 安卓小工具界面设计规范
 
-这份文档记录这次 `CC A Speed` 小工具使用的界面风格，方便以后继续用同一种视觉语言开发安卓小应用。
+这份文档记录 `CC 工具箱` 使用的界面风格，方便以后继续用同一种视觉语言开发安卓小应用。
 
 ## 1. 风格名称
-
-可以把这套风格叫作：
 
 ```text
 CC Light Utility UI
@@ -44,6 +42,7 @@ CC 轻量工具界面风格
 - 查询类工具
 - 个人仪表盘
 - 本地数据记录工具
+- 个人工具箱首页
 
 不太适合：
 
@@ -55,22 +54,11 @@ CC 轻量工具界面风格
 
 ## 3. 总体设计原则
 
-### 3.1 第一屏就是工具本身
+### 3.1 首页是工具入口
 
-不要做大段介绍页，不要先放营销 Hero。
+工具箱首页以卡片方式平铺展示所有工具，不做大段介绍页。
 
-用户打开 App 后，应直接看到核心功能。
-
-例如测速 App：
-
-```text
-标题
-状态
-速度数字
-延迟/上传/网络指标
-开始按钮
-历史记录
-```
+用户打开 App 后，应直接看到可点击的工具卡片。
 
 ### 3.2 以任务为中心
 
@@ -90,6 +78,7 @@ CC 轻量工具界面风格
 
 可以使用卡片，但只用于承载明确的功能块：
 
+- 工具箱首页的工具入口卡片
 - 主测速面板
 - 设置面板
 - 历史记录
@@ -99,14 +88,23 @@ CC 轻量工具界面风格
 
 ## 4. 页面结构
 
-推荐结构：
+工具箱整体结构：
 
 ```text
 App Shell
 ├─ Topbar 顶部区域
+│  ├─ 返回按钮（工具页显示）
 │  ├─ 小标签
-│  ├─ App 名称
-│  └─ 设置按钮
+│  └─ 页面标题
+├─ Router Outlet 路由容器
+│  ├─ 首页：工具卡片网格
+│  └─ 工具页：各工具独立内容
+```
+
+工具页推荐结构：
+
+```text
+Tool Page
 ├─ Main Panel 主功能面板
 │  ├─ 状态
 │  ├─ 核心数据
@@ -119,11 +117,9 @@ App Shell
 移动端推荐宽度：
 
 ```css
-width: min(100%, 520px);
+width: min(100%, 760px);
 margin: 0 auto;
 ```
-
-这样在手机上满宽，在桌面预览时不会过宽。
 
 ## 5. 颜色规范
 
@@ -135,7 +131,7 @@ margin: 0 auto;
 :root {
   --bg: #f4f7fb;
   --surface: #ffffff;
-  --surface-strong: #eef4fb;
+  --surface-soft: #eef4fb;
   --ink: #152033;
   --muted: #667085;
   --line: #d7e0ea;
@@ -150,7 +146,7 @@ margin: 0 auto;
 
 - `--bg`：页面背景
 - `--surface`：主面板背景
-- `--surface-strong`：指标卡、列表项背景
+- `--surface-soft`：指标卡、列表项背景
 - `--ink`：主要文字
 - `--muted`：说明文字、次级文字
 - `--line`：边框
@@ -203,9 +199,7 @@ font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont,
 顶部区域推荐：
 
 ```text
-小标签
-大标题
-右侧图标按钮
+返回按钮 | 小标签 + 大标题
 ```
 
 小标签样式：
@@ -230,22 +224,71 @@ h1 {
 
 注意：
 
-- H1 可以是 App 名称
+- H1 可以是 App 名称或工具名称
 - 不要把功能说明写成大段标题
-- 顶部按钮用图标，不用大文字按钮
+- 工具页显示返回按钮，首页隐藏
 
-## 9. 主功能面板
+## 9. 首页工具卡片
+
+首页使用双列网格展示工具卡片：
+
+```css
+.tool-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 12px;
+}
+```
+
+卡片结构：
+
+```text
+┌─────────────────────┐
+│ ▬ 顶部色条 (3px)     │
+│                     │
+│ 📱 图标              │
+│ 工具名称              │
+│ 简短描述         → │
+└─────────────────────┘
+```
+
+卡片样式：
+
+```css
+.tool-card {
+  min-height: 140px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  padding: 16px;
+  background: rgba(255, 255, 255, 0.92);
+  box-shadow: 0 6px 20px rgba(23, 35, 54, 0.06);
+  cursor: pointer;
+}
+```
+
+顶部色条使用工具自定义颜色：
+
+```css
+.tool-card::before {
+  height: 3px;
+  background: var(--card-accent, var(--accent));
+}
+```
+
+窄屏（380px 以下）改为单列。
+
+## 10. 主功能面板
 
 主面板是页面视觉中心。
 
 推荐：
 
 ```css
-.meter-panel {
-  padding: 22px;
-  border: 1px solid rgba(215, 224, 234, 0.92);
+.panel {
+  padding: 14px;
+  border: 1px solid var(--line);
   border-radius: 8px;
-  background: rgba(255, 255, 255, 0.88);
+  background: rgba(255, 255, 255, 0.92);
   box-shadow: 0 18px 42px rgba(23, 35, 54, 0.12);
 }
 ```
@@ -257,7 +300,7 @@ h1 {
 - 边框要轻
 - 面板内留白充足
 
-## 10. 状态行
+## 11. 状态行
 
 状态行用于告诉用户当前 App 正在做什么。
 
@@ -282,7 +325,7 @@ h1 {
 }
 ```
 
-## 11. 核心数据展示
+## 12. 核心数据展示
 
 工具类 App 的核心结果应该非常醒目。
 
@@ -304,17 +347,9 @@ h1 {
 - 使用 `tabular-nums` 保持数字跳动时稳定
 - 给结果区域固定或最小高度，避免界面跳动
 
-## 12. 指标卡
+## 13. 指标卡
 
 次级指标使用小卡片：
-
-```text
-延迟
-上传
-网络
-```
-
-推荐：
 
 ```css
 .metric-grid {
@@ -328,30 +363,15 @@ h1 {
   padding: 12px 10px;
   border: 1px solid var(--line);
   border-radius: 8px;
-  background: var(--surface-strong);
+  background: var(--surface-soft);
 }
 ```
 
-移动端窄屏可以变成一列：
+移动端窄屏可以变成一列。
 
-```css
-@media (max-width: 380px) {
-  .metric-grid {
-    grid-template-columns: 1fr;
-  }
-}
-```
-
-## 13. 主按钮
+## 14. 主按钮
 
 主操作按钮用于页面最重要的动作。
-
-例如：
-
-- 开始测速
-- 保存记录
-- 开始识别
-- 执行转换
 
 推荐：
 
@@ -367,49 +387,23 @@ h1 {
 }
 ```
 
-按钮内部可以使用：
-
-```text
-图标 + 文字
-```
-
-例如：
-
-```text
-▶ 开始测速
-```
-
-如果使用图标库，优先使用 lucide 图标。
-
-## 14. 设置面板
+## 15. 设置面板
 
 设置不要一开始占据主要空间。
 
-推荐通过右上角按钮展开。
+推荐通过可折叠区域展示。
 
 设置面板样式：
 
 ```css
-.settings-panel {
+.form-grid {
   display: grid;
   grid-template-columns: repeat(2, minmax(0, 1fr));
   gap: 12px;
-  margin-top: 14px;
-  padding: 14px;
 }
 ```
 
-适合放：
-
-- 选项
-- 模式
-- 数值
-- 开关
-- 测试大小
-
-不要放长篇说明。
-
-## 15. 历史记录
+## 16. 历史记录
 
 历史记录适合放在主功能面板下方。
 
@@ -423,43 +417,22 @@ h1 {
   min-height: 56px;
   padding: 10px 12px;
   border-radius: 8px;
-  background: var(--surface-strong);
+  background: var(--surface-soft);
 }
 ```
 
-一条记录包含：
-
-```text
-时间 / 简要信息 / 核心结果
-```
-
-例如：
-
-```text
-05/25 00:15
-延迟 42 ms · 上传 11.5 Mbps
-86.2 Mbps
-```
-
-## 16. 圆角规范
+## 17. 圆角规范
 
 统一使用小圆角：
 
 ```text
-8px
+8px（面板、按钮、输入框、指标卡、列表项）
+10px（首页工具卡片）
 ```
-
-适合：
-
-- 面板
-- 按钮
-- 输入框
-- 指标卡
-- 列表项
 
 不要使用很大的圆角胶囊，除非是状态标签或特殊控件。
 
-## 17. 阴影规范
+## 18. 阴影规范
 
 主面板可以有阴影：
 
@@ -481,7 +454,7 @@ box-shadow: 0 14px 28px rgba(15, 139, 141, 0.22);
 - 不要每个小元素都加阴影
 - 不要使用过黑过重的阴影
 
-## 18. 响应式规则
+## 19. 响应式规则
 
 移动端优先。
 
@@ -489,10 +462,10 @@ box-shadow: 0 14px 28px rgba(15, 139, 141, 0.22);
 
 ```css
 .app-shell {
-  width: min(100%, 520px);
+  width: min(100%, 760px);
   min-height: 100vh;
   margin: 0 auto;
-  padding: max(18px, env(safe-area-inset-top)) 18px 28px;
+  padding: max(18px, env(safe-area-inset-top)) 16px 30px;
 }
 ```
 
@@ -500,25 +473,16 @@ box-shadow: 0 14px 28px rgba(15, 139, 141, 0.22);
 
 ```css
 @media (max-width: 380px) {
-  .app-shell {
-    padding-inline: 12px;
+  .tool-grid {
+    grid-template-columns: 1fr;
   }
-
-  .metric-grid,
-  .settings-panel {
+  .metric-grid {
     grid-template-columns: 1fr;
   }
 }
 ```
 
-注意：
-
-- 文字不能溢出按钮
-- 数字不能撑破卡片
-- 指标卡在窄屏可改为单列
-- 给固定格式控件设置稳定尺寸
-
-## 19. 文案规范
+## 20. 文案规范
 
 文案短、明确、有动作感。
 
@@ -531,6 +495,9 @@ box-shadow: 0 14px 28px rgba(15, 139, 141, 0.22);
 网络不可用
 最近记录
 清空
+保存笔记
+推送备份
+拉取合并
 ```
 
 避免：
@@ -538,20 +505,13 @@ box-shadow: 0 14px 28px rgba(15, 139, 141, 0.22);
 ```text
 点击此按钮后将会开始进行网络速度测试
 此处展示你的历史测速数据
-你可以在这里配置测速参数
 ```
 
 工具型 App 不需要过度解释。
 
-## 20. 空状态
+## 21. 空状态
 
 空状态要轻，不要占太大空间。
-
-例如：
-
-```text
-暂无测速记录
-```
 
 推荐样式：
 
@@ -565,7 +525,7 @@ box-shadow: 0 14px 28px rgba(15, 139, 141, 0.22);
 }
 ```
 
-## 21. 交互状态
+## 22. 交互状态
 
 至少要有：
 
@@ -584,19 +544,24 @@ box-shadow: 0 14px 28px rgba(15, 139, 141, 0.22);
 }
 ```
 
-运行中按钮文字可以从：
+## 23. 卡片入场动画
 
-```text
-开始测速
+首页工具卡片有轻微的入场动画：
+
+```css
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(8px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+.tool-card {
+  animation: fadeIn 0.35s ease both;
+}
 ```
 
-变成：
+每张卡片有递增的延迟，形成错落入场效果。
 
-```text
-测速中
-```
-
-## 22. 开发时的 CSS 模板
+## 24. 开发时的 CSS 模板
 
 以后新工具可以从这个基础开始：
 
@@ -605,7 +570,7 @@ box-shadow: 0 14px 28px rgba(15, 139, 141, 0.22);
   color-scheme: light;
   --bg: #f4f7fb;
   --surface: #ffffff;
-  --surface-strong: #eef4fb;
+  --surface-soft: #eef4fb;
   --ink: #152033;
   --muted: #667085;
   --line: #d7e0ea;
@@ -617,9 +582,7 @@ box-shadow: 0 14px 28px rgba(15, 139, 141, 0.22);
   font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
 }
 
-* {
-  box-sizing: border-box;
-}
+* { box-sizing: border-box; }
 
 body {
   min-height: 100vh;
@@ -631,14 +594,14 @@ body {
 }
 
 .app-shell {
-  width: min(100%, 520px);
+  width: min(100%, 760px);
   min-height: 100vh;
   margin: 0 auto;
-  padding: max(18px, env(safe-area-inset-top)) 18px 28px;
+  padding: max(18px, env(safe-area-inset-top)) 16px 30px;
 }
 ```
 
-## 23. 生成新界面时的提示词
+## 25. 生成新界面时的提示词
 
 以后让 AI 生成同风格小工具界面时，可以这样说：
 
@@ -648,17 +611,10 @@ body {
 页面结构包含顶部标题区、主功能面板、主要操作按钮、次级指标或设置区、历史/结果列表。
 不要做营销首页，不要使用大面积渐变、装饰光球、卡片套卡片。
 使用纯 HTML/CSS/JavaScript 实现，适合 Capacitor 打包成安卓 App。
+工具模块通过 CCToolbox.register() 注册到 CC 工具箱。
 ```
 
-如果是具体工具，可以补充：
-
-```text
-工具类型：记账/倒计时/OCR/翻译/清单/查询器
-核心操作：保存/开始/识别/转换/查询
-核心结果：金额/时间/文本/状态/列表
-```
-
-## 24. 和 Material Design 的关系
+## 26. 和 Material Design 的关系
 
 这套风格不是完整 Material Design。
 
@@ -676,7 +632,7 @@ body {
 - 更少系统级复杂交互
 - 更适合个人小工具快速开发
 
-## 25. 一句话总结
+## 27. 一句话总结
 
 `CC Light Utility UI` 是一套适合个人安卓小工具的轻量界面风格：
 

@@ -1,6 +1,6 @@
 {
-  "appId": "com.ccsyncnotes.app",
-  "appName": "CC Sync Notes",
+  "appId": "com.cctoolbox.app",
+  "appName": "CC 工具箱",
   "webDir": "www",
   "server": {
     "androidScheme": "https"
