@@ -187,6 +187,8 @@ CCToolbox.register({
       }
     }
 
+    const isAndroid = /Android/i.test(navigator.userAgent);
+
     function normalizeUrlPart(part) {
       return String(part || '').replace(/^\/+|\/+$/g, '');
     }
@@ -197,10 +199,12 @@ CCToolbox.register({
     }
 
     function proxyWebdav(url) {
+      if (isAndroid) return url;
       return '/api/webdav?url=' + encodeURIComponent(url);
     }
 
     function proxyGithub(url) {
+      if (isAndroid) return url;
       return '/api/github?url=' + encodeURIComponent(url);
     }
 

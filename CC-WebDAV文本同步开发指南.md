@@ -683,3 +683,19 @@ A：技术上可以（转 Base64），但不推荐。免费版流量有限，且
 - 重写了文件夹创建逻辑，使用 `ensureFolderRecursive` 递归创建完整路径
 
 **感谢用户**：感谢你提出的需求，让这个工具更加实用！
+
+### 2026-05-26：sync-notes.js 坚果云推送修复 + 网络安全配置
+
+**问题**：APK 打包后坚果云同步功能完全无法使用。原因：
+
+1. `sync-notes.js` 中的 `proxyWebdav()` 和 `proxyGithub()` 函数**始终**走本地代理 `/api/webdav?url=...`，没有像 `lib/webdav.js` 那样检测安卓环境
+2. 安卓 APK 中没有代理服务器，所以请求发到了 `https://localhost/api/webdav?url=...`（Capacitor 的 https scheme），必然失败
+3. 缺少 `network_security_config.xml`，部分安卓版本可能会静默阻止 HTTPS 请求
+
+**解决方案**：
+- 在 `sync-notes.js` 中添加 `isAndroid` 检测，安卓环境下 `proxyWebdav()` 和 `proxyGithub()` 直接返回原始 URL
+- 新增 `res/xml/network_security_config.xml` 并在 `AndroidManifest.xml` 中引用
+- 确保所有涉及外部请求的工具都遵循「浏览器走代理，安卓直连」的原则
+
+**教训**：`lib/webdav.js` 已经正确处理了安卓检测，但 `sync-notes.js` 没有使用公共模块，而是自己写了一套请求函数，导致遗漏了安卓适配。**所有工具应尽量复用 `lib/webdav.js` 公共模块。**
+
