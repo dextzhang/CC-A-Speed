@@ -8,51 +8,38 @@ CCToolbox.register({
 
   render() {
     return `
-      <section class="panel" aria-label="账号配置">
+      <section class="panel" aria-label="备份操作">
         <div class="section-heading">
-          <h2>坚果云账号</h2>
-          <span id="cb-configStatus" style="font-size:0.8rem;color:var(--muted)">未配置</span>
+          <h2>云端备份路径</h2>
+          <span id="cb-configStatus" style="font-size:0.8rem;color:var(--muted);font-weight:700">未配置</span>
         </div>
-        <div class="form-grid">
-          <label class="wide-field">
-            邮箱
-            <input id="cb-email" type="email" autocomplete="username" placeholder="坚果云注册邮箱">
-          </label>
-          <label class="wide-field">
-            应用密码
-            <input id="cb-password" type="password" autocomplete="current-password" placeholder="第三方应用密码">
-          </label>
-        </div>
-        <button class="primary-button" id="cb-saveConfig" type="button">保存账号配置</button>
-      </section>
-
-      <section class="panel-soft" aria-label="备份操作">
-        <div class="section-heading">
-          <h2>云端路径</h2>
-        </div>
-        <label class="wide-field">
+        <label class="wide-field" style="margin-top:10px">
           文件路径（相对于 WebDAV 根目录）
           <input id="cb-path" type="text" value="CCSyncNotes/backup.json"
                  placeholder="CCSyncNotes/my-folder/data.json">
         </label>
-        <p style="color:var(--muted);font-size:0.78rem;margin-top:-4px">
-          支持子文件夹，如 CCSyncNotes/todo/tasks.json
+        <p style="color:var(--muted);font-size:0.78rem;margin-top:4px">
+          支持多层子文件夹，如 CCSyncNotes/todo/tasks.json
         </p>
 
-        <div class="section-heading" style="margin-top:14px">
-          <h2>数据内容</h2>
+        <div style="display:flex; justify-content:space-between; align-items:center; margin: 16px 0; padding: 12px 14px; border-radius:12px; background:var(--surface-soft); border:1px dashed var(--line)">
+          <span style="font-size:0.8rem; font-weight:700; color:var(--muted)">坚果云 WebDAV 账号管理</span>
+          <a href="#/settings" class="sync-config-shortcut">⚙️ 配置第三方账户授权</a>
+        </div>
+
+        <div class="section-heading" style="margin-top:18px">
+          <h2>备份数据内容</h2>
         </div>
         <textarea id="cb-content" spellcheck="false"
-                  placeholder="粘贴或输入要备份的 JSON / 文本内容...&#10;&#10;示例：&#10;{&#10;  &quot;app&quot;: &quot;my-tool&quot;,&#10;  &quot;data&quot;: { ... }&#10;}"
-                  style="min-height:180px;font-family:Menlo,Consolas,monospace;font-size:0.85rem;line-height:1.5"></textarea>
+                  placeholder="粘贴或输入要备份的 JSON / 文本内容...&#10;&#10;示例：&#10;{&#10;  &quot;app&quot;: &quot;my-tool&quot;,&#10;  &quot;data&quot;: { ... }&#10;}"></textarea>
 
-        <div style="display:flex;align-items:center;gap:10px;margin-top:12px;min-height:36px;color:var(--muted);font-size:0.85rem">
+        <div style="display:flex;align-items:center;gap:10px;margin-top:16px;min-height:36px;color:var(--muted);font-size:0.85rem">
           <span class="status-dot ready" id="cb-statusDot"></span>
-          <span id="cb-statusText">准备就绪</span>
-          <span id="cb-lastSync" style="margin-left:auto;font-size:0.78rem"></span>
+          <span id="cb-statusText" style="font-weight:700">准备就绪</span>
+          <span id="cb-lastSync" style="margin-left:auto;font-size:0.78rem;font-weight:700"></span>
         </div>
 
-        <div class="action-row">
+        <div class="action-row" style="margin-top:14px">
           <button class="ghost-button" id="cb-pullBtn" type="button">从云端拉取</button>
           <button class="primary-button" id="cb-pushBtn" type="button">推送到云端</button>
         </div>
@@ -71,9 +58,6 @@ CCToolbox.register({
   init() {
     const q = (s) => document.querySelector(s);
     const els = {
-      email: q('#cb-email'),
-      password: q('#cb-password'),
-      saveConfig: q('#cb-saveConfig'),
       path: q('#cb-path'),
       content: q('#cb-content'),
       pushBtn: q('#cb-pushBtn'),
@@ -86,7 +70,6 @@ CCToolbox.register({
       historyList: q('#cb-historyList')
     };
 
-    const CONFIG_KEY = 'cc-cloud-backup-config';
     const HISTORY_KEY = 'cc-cloud-backup-history';
     const DEFAULT_PATH = 'CCSyncNotes/backup.json';
 
@@ -102,44 +85,29 @@ CCToolbox.register({
       els.pullBtn.disabled = disabled;
     }
 
-    function loadConfig() {
+    function initWebdav() {
+      const GLOBAL_SETTINGS_KEY = 'cc-global-settings';
+      let globalSettings = {};
       try {
-        const cfg = JSON.parse(localStorage.getItem(CONFIG_KEY) || '{}');
-        if (cfg.email) els.email.value = cfg.email;
-        if (cfg.password) els.password.value = cfg.password;
-        if (cfg.email && cfg.password) {
-          els.configStatus.textContent = '已配置';
-          els.configStatus.style.color = 'var(--accent-strong)';
-          initWebdav(cfg);
-        }
+        globalSettings = JSON.parse(localStorage.getItem(GLOBAL_SETTINGS_KEY) || '{}');
       } catch {}
-    }
 
-    function initWebdav(cfg) {
-      if (typeof CCWebdav !== 'undefined' && CCWebdav.init) {
-        CCWebdav.init({
-          baseUrl: 'https://dav.jianguoyun.com/dav',
-          username: cfg.email,
-          password: cfg.password
-        });
-      }
-    }
-
-    function saveConfig() {
-      const email = els.email.value.trim();
-      const password = els.password.value.trim();
-
-      if (!email || !password) {
-        setStatus('请填写邮箱和应用密码', 'error');
+      if (!globalSettings.webdavUrl || !globalSettings.webdavUser || !globalSettings.webdavPass) {
+        els.configStatus.textContent = '未配置账号';
+        els.configStatus.style.color = 'var(--danger)';
         return false;
       }
 
-      const cfg = { email, password };
-      localStorage.setItem(CONFIG_KEY, JSON.stringify(cfg));
-      els.configStatus.textContent = '已配置';
-      els.configStatus.style.color = 'var(--accent-strong)';
-      initWebdav(cfg);
-      setStatus('账号配置已保存');
+      els.configStatus.textContent = '账号就绪';
+      els.configStatus.style.color = 'var(--success)';
+
+      if (typeof CCWebdav !== 'undefined' && CCWebdav.init) {
+        CCWebdav.init({
+          baseUrl: globalSettings.webdavUrl,
+          username: globalSettings.webdavUser,
+          password: globalSettings.webdavPass
+        });
+      }
       return true;
     }
 
@@ -175,11 +143,14 @@ CCToolbox.register({
         desc.style.fontSize = '0.78rem';
         info.append(title, desc);
 
+        const rightDiv = document.createElement('div');
+        rightDiv.className = 'history-item-right';
         const time = document.createElement('time');
         time.dateTime = item.time;
         time.textContent = new Date(item.time).toLocaleTimeString('zh-CN', { hour: '2-digit', minute: '2-digit' });
+        rightDiv.append(time);
 
-        li.append(info, time);
+        li.append(info, rightDiv);
         li.style.cursor = 'pointer';
         li.addEventListener('click', function() {
           els.path.value = item.path;
@@ -201,12 +172,11 @@ CCToolbox.register({
       renderHistory();
     }
 
-    els.saveConfig.addEventListener('click', function() {
-      saveConfig();
-    });
-
     els.pushBtn.addEventListener('click', async function() {
-      if (!saveConfig()) return;
+      if (!initWebdav()) {
+        setStatus('请先点击链接配置坚果云账号', 'error');
+        return;
+      }
 
       var path = els.path.value.trim() || DEFAULT_PATH;
       var rawContent = els.content.value;
@@ -236,7 +206,10 @@ CCToolbox.register({
     });
 
     els.pullBtn.addEventListener('click', async function() {
-      if (!saveConfig()) return;
+      if (!initWebdav()) {
+        setStatus('请先点击链接配置坚果云账号', 'error');
+        return;
+      }
 
       var path = els.path.value.trim() || DEFAULT_PATH;
 
@@ -289,7 +262,7 @@ CCToolbox.register({
       return (len / 1024 / 1024).toFixed(1) + ' MB';
     }
 
-    loadConfig();
+    initWebdav();
     renderHistory();
   },
 

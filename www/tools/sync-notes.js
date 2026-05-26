@@ -3,7 +3,7 @@ CCToolbox.register({
   name: '文本同步',
   eyebrow: 'Local first notes',
   icon: '📝',
-  description: '本地笔记 + 坚果云/GitHub 同步备份',
+  description: '本地笔记 + 坚果云/Gitee/GitHub 统一同步备份',
   color: '#19735a',
 
   render() {
@@ -12,13 +12,13 @@ CCToolbox.register({
         <div style="display:grid;grid-template-columns:1fr auto;gap:10px;align-items:end">
           <label>
             <span>标题</span>
-            <input id="sn-noteTitle" type="text" autocomplete="off" placeholder="新的想法">
+            <input id="sn-noteTitle" type="text" autocomplete="off" placeholder="输入笔记标题...">
           </label>
           <button class="ghost-button danger" id="sn-deleteNoteButton" type="button">删除</button>
         </div>
-        <textarea id="sn-noteBody" spellcheck="false" placeholder="写点什么，先存在手机本地，再同步到坚果云或 GitHub。"></textarea>
+        <textarea id="sn-noteBody" spellcheck="false" placeholder="写点什么，先存在手机本地，再同步到云端。"></textarea>
         <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;min-height:52px;margin-top:10px;color:var(--muted);font-size:0.9rem">
-          <span id="sn-saveState">已准备</span>
+          <span id="sn-saveState" style="font-weight:700">已准备</span>
           <div style="display:flex;gap:8px">
             <button class="icon-button" id="sn-newNoteButton" type="button" aria-label="新建笔记" title="新建笔记">+</button>
             <button class="primary-button" id="sn-saveNoteButton" type="button">保存笔记</button>
@@ -28,8 +28,8 @@ CCToolbox.register({
 
       <section class="panel-soft" aria-label="同步设置">
         <div class="section-heading">
-          <h2>同步目标</h2>
-          <span id="sn-syncStatus">未同步</span>
+          <h2>同步配置</h2>
+          <span id="sn-syncStatus" style="font-weight:700">未同步</span>
         </div>
 
         <div class="target-row">
@@ -47,81 +47,30 @@ CCToolbox.register({
           </label>
         </div>
 
-        <details class="config-block" open>
-          <summary>坚果云 WebDAV</summary>
-          <div class="form-grid">
+        <div style="display:flex; justify-content:space-between; align-items:center; margin: 12px 0 16px; padding: 12px 14px; border-radius:12px; background:var(--surface-soft); border:1px dashed var(--line)">
+          <span style="font-size:0.8rem; font-weight:700; color:var(--muted)">云端授权账户管理</span>
+          <a href="#/settings" class="sync-config-shortcut">⚙️ 配置第三方账户授权</a>
+        </div>
+
+        <details class="config-block">
+          <summary>自定义备份文件名</summary>
+          <div class="form-grid" style="margin-top:10px">
             <label>
-              WebDAV 地址
-              <input id="sn-webdavUrl" type="url" placeholder="https://dav.jianguoyun.com/dav/CCSyncNotes">
-            </label>
-            <label>
-              坚果云账号
-              <input id="sn-webdavUser" type="email" autocomplete="username" placeholder="你的邮箱">
-            </label>
-            <label>
-              应用密码
-              <input id="sn-webdavPass" type="password" autocomplete="current-password" placeholder="不是登录密码">
-            </label>
-            <label>
-              备份文件名
+              坚果云文件名
               <input id="sn-webdavFile" type="text" placeholder="cc-notes-backup.json">
             </label>
-          </div>
-        </details>
-
-        <details class="config-block">
-          <summary>Gitee 同步</summary>
-          <div class="form-grid">
             <label>
-              Owner
-              <input id="sn-giteeOwner" type="text" autocomplete="off" placeholder="你的 Gitee 用户名">
-            </label>
-            <label>
-              Repo
-              <input id="sn-giteeRepo" type="text" autocomplete="off" placeholder="仓库名称">
-            </label>
-            <label>
-              Branch
-              <input id="sn-giteeBranch" type="text" autocomplete="off" placeholder="master">
-            </label>
-            <label>
-              文件路径
-              <input id="sn-giteePath" type="text" autocomplete="off" placeholder="cc-notes-backup.json">
+              Gitee 文件路径
+              <input id="sn-giteePath" type="text" placeholder="cc-notes-backup.json">
             </label>
             <label class="wide-field">
-              私人令牌 (Access Token)
-              <input id="sn-giteeToken" type="password" autocomplete="off" placeholder="你的 Gitee 私人令牌">
+              GitHub 文件路径
+              <input id="sn-githubPath" type="text" placeholder="cc-notes-backup.json">
             </label>
           </div>
         </details>
 
-        <details class="config-block">
-          <summary>GitHub</summary>
-          <div class="form-grid">
-            <label>
-              Owner
-              <input id="sn-githubOwner" type="text" autocomplete="off" placeholder="dextzhang">
-            </label>
-            <label>
-              Repo
-              <input id="sn-githubRepo" type="text" autocomplete="off" placeholder="notes-backup">
-            </label>
-            <label>
-              Branch
-              <input id="sn-githubBranch" type="text" autocomplete="off" placeholder="main">
-            </label>
-            <label>
-              文件路径
-              <input id="sn-githubPath" type="text" autocomplete="off" placeholder="cc-notes-backup.json">
-            </label>
-            <label class="wide-field">
-              Fine-grained token
-              <input id="sn-githubToken" type="password" autocomplete="off" placeholder="Contents: Read and write">
-            </label>
-          </div>
-        </details>
-
-        <div class="action-row">
+        <div class="action-row" style="margin-top:20px">
           <button class="ghost-button" id="sn-saveSettingsButton" type="button">保存配置</button>
           <button class="ghost-button" id="sn-pullButton" type="button">拉取合并</button>
           <button class="primary-button" id="sn-pushButton" type="button">推送备份</button>
@@ -131,7 +80,7 @@ CCToolbox.register({
       <section class="panel-soft" aria-label="笔记列表">
         <div class="section-heading">
           <h2>本地笔记</h2>
-          <strong id="sn-noteCount">0</strong>
+          <strong id="sn-noteCount" style="background:var(--accent); color:white; padding: 2px 10px; border-radius:12px; font-size:0.85rem">0</strong>
         </div>
         <ul class="note-list" id="sn-noteList"></ul>
       </section>
@@ -141,26 +90,16 @@ CCToolbox.register({
   init() {
     const notesKey = 'cc-sync-notes';
     const settingsKey = 'cc-sync-settings';
+    const GLOBAL_SETTINGS_KEY = 'cc-global-settings';
     const backupVersion = 1;
 
     const defaultSettings = {
       enableWebdav: true,
-      enableGithub: false,
       enableGitee: false,
-      webdavUrl: 'https://dav.jianguoyun.com/dav/CCSyncNotes',
-      webdavUser: '',
-      webdavPass: '',
+      enableGithub: false,
       webdavFile: 'cc-notes-backup.json',
-      githubOwner: '',
-      githubRepo: '',
-      githubBranch: 'main',
-      githubPath: 'cc-notes-backup.json',
-      githubToken: '',
-      giteeOwner: '',
-      giteeRepo: '',
-      giteeBranch: 'master',
       giteePath: 'cc-notes-backup.json',
-      giteeToken: ''
+      githubPath: 'cc-notes-backup.json'
     };
 
     const q = (sel) => document.querySelector(sel);
@@ -170,16 +109,6 @@ CCToolbox.register({
       enableGithub: q('#sn-enableGithub'),
       enableGitee: q('#sn-enableGitee'),
       enableWebdav: q('#sn-enableWebdav'),
-      giteeBranch: q('#sn-giteeBranch'),
-      giteeOwner: q('#sn-giteeOwner'),
-      giteePath: q('#sn-giteePath'),
-      giteeRepo: q('#sn-giteeRepo'),
-      giteeToken: q('#sn-giteeToken'),
-      githubBranch: q('#sn-githubBranch'),
-      githubOwner: q('#sn-githubOwner'),
-      githubPath: q('#sn-githubPath'),
-      githubRepo: q('#sn-githubRepo'),
-      githubToken: q('#sn-githubToken'),
       newNoteButton: q('#sn-newNoteButton'),
       noteBody: q('#sn-noteBody'),
       noteCount: q('#sn-noteCount'),
@@ -192,13 +121,13 @@ CCToolbox.register({
       saveState: q('#sn-saveState'),
       syncStatus: q('#sn-syncStatus'),
       webdavFile: q('#sn-webdavFile'),
-      webdavPass: q('#sn-webdavPass'),
-      webdavUrl: q('#sn-webdavUrl'),
-      webdavUser: q('#sn-webdavUser')
+      giteePath: q('#sn-giteePath'),
+      githubPath: q('#sn-githubPath')
     };
 
     let notes = [];
     let settings = { ...defaultSettings };
+    let globalSettings = {};
     let activeId = '';
 
     function uid() {
@@ -235,9 +164,18 @@ CCToolbox.register({
       return String(part || '').replace(/^\/+|\/+$/g, '');
     }
 
+    function loadGlobalSettings() {
+      try {
+        globalSettings = JSON.parse(localStorage.getItem(GLOBAL_SETTINGS_KEY) || '{}');
+      } catch {
+        globalSettings = {};
+      }
+    }
+
     function webdavFileUrl() {
-      const base = settings.webdavUrl.trim().replace(/\/+$/g, '');
-      return `${base}/${encodeURIComponent(settings.webdavFile.trim() || defaultSettings.webdavFile)}`;
+      const base = (globalSettings.webdavUrl || 'https://dav.jianguoyun.com/dav').trim().replace(/\/+$/g, '');
+      const file = settings.webdavFile.trim() || 'cc-notes-backup.json';
+      return `${base}/${encodeURIComponent(file)}`;
     }
 
     function proxyWebdav(url) {
@@ -246,7 +184,6 @@ CCToolbox.register({
     }
 
     function proxyGithub(url) {
-      // GitHub API 原生支持 CORS，所有环境都可以直连
       return url;
     }
 
@@ -296,7 +233,7 @@ CCToolbox.register({
         notes = [{
           id: uid(),
           title: '第一条同步笔记',
-          body: '这个原型会先把笔记保存在本地。配置坚果云 WebDAV 或 GitHub 后，可以手动拉取和推送备份。',
+          body: '配置 Gitee、GitHub 或坚果云 WebDAV 后，可以拉取和推送备份。',
           createdAt,
           updatedAt: createdAt
         }];
@@ -324,22 +261,11 @@ CCToolbox.register({
     function collectSettings() {
       settings = {
         enableWebdav: els.enableWebdav.checked,
-        enableGithub: els.enableGithub.checked,
         enableGitee: els.enableGitee.checked,
-        webdavUrl: els.webdavUrl.value.trim(),
-        webdavUser: els.webdavUser.value.trim(),
-        webdavPass: els.webdavPass.value,
-        webdavFile: els.webdavFile.value.trim() || defaultSettings.webdavFile,
-        githubOwner: els.githubOwner.value.trim(),
-        githubRepo: els.githubRepo.value.trim(),
-        githubBranch: els.githubBranch.value.trim() || defaultSettings.githubBranch,
-        githubPath: els.githubPath.value.trim() || defaultSettings.githubPath,
-        githubToken: els.githubToken.value.trim(),
-        giteeOwner: els.giteeOwner.value.trim(),
-        giteeRepo: els.giteeRepo.value.trim(),
-        giteeBranch: els.giteeBranch.value.trim() || defaultSettings.giteeBranch,
-        giteePath: els.giteePath.value.trim() || defaultSettings.giteePath,
-        giteeToken: els.giteeToken.value.trim()
+        enableGithub: els.enableGithub.checked,
+        webdavFile: els.webdavFile.value.trim() || 'cc-notes-backup.json',
+        giteePath: els.giteePath.value.trim() || 'cc-notes-backup.json',
+        githubPath: els.githubPath.value.trim() || 'cc-notes-backup.json'
       };
       writeJson(settingsKey, settings);
     }
@@ -388,13 +314,17 @@ CCToolbox.register({
         });
 
         const content = document.createElement('div');
-        const title = document.createElement('strong');
+        content.className = 'note-item-content';
+        const title = document.createElement('h4');
+        title.className = 'note-item-title';
         title.textContent = note.title || '未命名笔记';
         const preview = document.createElement('p');
+        preview.className = 'note-item-preview';
         preview.textContent = notePreview(note);
         content.append(title, preview);
 
         const time = document.createElement('time');
+        time.className = 'note-item-time';
         time.dateTime = note.updatedAt;
         time.textContent = new Date(note.updatedAt).toLocaleDateString('zh-CN', {
           month: '2-digit',
@@ -452,20 +382,20 @@ CCToolbox.register({
     function validateTargets() {
       const targets = [];
       if (settings.enableWebdav) {
-        if (!settings.webdavUrl || !settings.webdavUser || !settings.webdavPass) {
-          throw new Error('请补全坚果云 WebDAV 地址、账号和应用密码');
+        if (!globalSettings.webdavUrl || !globalSettings.webdavUser || !globalSettings.webdavPass) {
+          throw new Error('未检测到坚果云 WebDAV 账号。请点击【配置第三方账户授权】进行设置。');
         }
         targets.push('webdav');
       }
       if (settings.enableGitee) {
-        if (!settings.giteeOwner || !settings.giteeRepo || !settings.giteeToken) {
-          throw new Error('请补全 Gitee Owner、Repo 和私人令牌');
+        if (!globalSettings.giteeOwner || !globalSettings.giteeRepo || !globalSettings.giteeToken) {
+          throw new Error('未检测到 Gitee 账号。请点击【配置第三方账户授权】进行设置。');
         }
         targets.push('gitee');
       }
       if (settings.enableGithub) {
-        if (!settings.githubOwner || !settings.githubRepo || !settings.githubToken) {
-          throw new Error('请补全 GitHub owner、repo 和 token');
+        if (!globalSettings.githubOwner || !globalSettings.githubRepo || !globalSettings.githubToken) {
+          throw new Error('未检测到 GitHub 账号。请点击【配置第三方账户授权】进行设置。');
         }
         targets.push('github');
       }
@@ -477,13 +407,13 @@ CCToolbox.register({
 
     async function ensureWebdavFolder() {
       if (isAndroid) {
-        throw new Error('坚果云同步目录不存在。由于安卓平台的网络限制，请先在坚果云网页版或客户端中手动创建该文件夹（例如 "CCSyncNotes"），然后再进行同步。');
+        throw new Error('坚果云同步目录不存在。由于安卓平台的网络限制，请先在坚果云网页版或客户端中手动创建该文件夹，然后再进行同步。');
       }
-      const base = settings.webdavUrl.trim().replace(/\/+$/g, '');
+      const base = globalSettings.webdavUrl.trim().replace(/\/+$/g, '');
       const response = await fetch(proxyWebdav(base + '/'), {
         method: 'PROPFIND',
         headers: {
-          Authorization: authHeader(settings.webdavUser, settings.webdavPass),
+          Authorization: authHeader(globalSettings.webdavUser, globalSettings.webdavPass),
           Depth: '0'
         }
       });
@@ -492,7 +422,7 @@ CCToolbox.register({
         const createResponse = await fetch(proxyWebdav(folderUrl), {
           method: 'MKCOL',
           headers: {
-            Authorization: authHeader(settings.webdavUser, settings.webdavPass)
+            Authorization: authHeader(globalSettings.webdavUser, globalSettings.webdavPass)
           }
         });
         if (!createResponse.ok && createResponse.status !== 405) {
@@ -507,7 +437,7 @@ CCToolbox.register({
         response = await fetch(proxyWebdav(webdavFileUrl()), {
           method: 'PUT',
           headers: {
-            Authorization: authHeader(settings.webdavUser, settings.webdavPass),
+            Authorization: authHeader(globalSettings.webdavUser, globalSettings.webdavPass),
             'Content-Type': 'application/json; charset=utf-8'
           },
           body: JSON.stringify(backupPayload(), null, 2)
@@ -524,7 +454,7 @@ CCToolbox.register({
         const retry = await fetch(proxyWebdav(webdavFileUrl()), {
           method: 'PUT',
           headers: {
-            Authorization: authHeader(settings.webdavUser, settings.webdavPass),
+            Authorization: authHeader(globalSettings.webdavUser, globalSettings.webdavPass),
             'Content-Type': 'application/json; charset=utf-8'
           },
           body: JSON.stringify(backupPayload(), null, 2)
@@ -546,7 +476,7 @@ CCToolbox.register({
         response = await fetch(proxyWebdav(webdavFileUrl()), {
           method: 'GET',
           headers: {
-            Authorization: authHeader(settings.webdavUser, settings.webdavPass)
+            Authorization: authHeader(globalSettings.webdavUser, globalSettings.webdavPass)
           }
         });
       } catch (e) {
@@ -566,14 +496,14 @@ CCToolbox.register({
     }
 
     function giteeApiUrl() {
-      const owner = normalizeUrlPart(settings.giteeOwner);
-      const repo = normalizeUrlPart(settings.giteeRepo);
+      const owner = normalizeUrlPart(globalSettings.giteeOwner);
+      const repo = normalizeUrlPart(globalSettings.giteeRepo);
       const path = settings.giteePath.split('/').map(encodeURIComponent).join('/');
       return `https://gitee.com/api/v5/repos/${owner}/${repo}/contents/${path}`;
     }
 
     async function fetchGiteeFile() {
-      const url = `${giteeApiUrl()}?access_token=${encodeURIComponent(settings.giteeToken)}&ref=${encodeURIComponent(settings.giteeBranch)}`;
+      const url = `${giteeApiUrl()}?access_token=${encodeURIComponent(globalSettings.giteeToken)}&ref=${encodeURIComponent(globalSettings.giteeBranch)}`;
       const response = await fetch(url);
 
       if (response.status === 404) return null;
@@ -589,10 +519,10 @@ CCToolbox.register({
     async function pushGitee() {
       const existing = await fetchGiteeFile();
       const body = {
-        access_token: settings.giteeToken,
+        access_token: globalSettings.giteeToken,
         message: 'chore: sync cc notes backup',
         content: encodeBase64Unicode(JSON.stringify(backupPayload(), null, 2)),
-        branch: settings.giteeBranch
+        branch: globalSettings.giteeBranch
       };
 
       if (existing?.sha) {
@@ -627,18 +557,18 @@ CCToolbox.register({
     }
 
     function githubApiUrl() {
-      const owner = normalizeUrlPart(settings.githubOwner);
-      const repo = normalizeUrlPart(settings.githubRepo);
+      const owner = normalizeUrlPart(globalSettings.githubOwner);
+      const repo = normalizeUrlPart(globalSettings.githubRepo);
       const path = settings.githubPath.split('/').map(encodeURIComponent).join('/');
       return `https://api.github.com/repos/${owner}/${repo}/contents/${path}`;
     }
 
     async function fetchGithubFile() {
-      const url = `${githubApiUrl()}?ref=${encodeURIComponent(settings.githubBranch)}`;
+      const url = `${githubApiUrl()}?ref=${encodeURIComponent(globalSettings.githubBranch)}`;
       const response = await fetch(proxyGithub(url), {
         headers: {
           Accept: 'application/vnd.github+json',
-          Authorization: `Bearer ${settings.githubToken}`,
+          Authorization: `Bearer ${globalSettings.githubToken}`,
           'X-GitHub-Api-Version': '2022-11-28'
         }
       });
@@ -658,7 +588,7 @@ CCToolbox.register({
       const body = {
         message: 'chore: sync cc notes backup',
         content: encodeBase64Unicode(JSON.stringify(backupPayload(), null, 2)),
-        branch: settings.githubBranch
+        branch: globalSettings.githubBranch
       };
 
       if (existing?.sha) {
@@ -669,7 +599,7 @@ CCToolbox.register({
         method: 'PUT',
         headers: {
           Accept: 'application/vnd.github+json',
-          Authorization: `Bearer ${settings.githubToken}`,
+          Authorization: `Bearer ${globalSettings.githubToken}`,
           'Content-Type': 'application/json',
           'X-GitHub-Api-Version': '2022-11-28'
         },
@@ -736,6 +666,7 @@ CCToolbox.register({
     async function pushSelectedTargets() {
       saveActiveNote();
       collectSettings();
+      loadGlobalSettings();
       const targets = validateTargets();
       setSyncStatus('正在推送...');
       setSyncButtons(true);
@@ -755,6 +686,7 @@ CCToolbox.register({
 
     async function pullSelectedTargets() {
       collectSettings();
+      loadGlobalSettings();
       const targets = validateTargets();
       setSyncStatus('正在拉取...');
       setSyncButtons(true);

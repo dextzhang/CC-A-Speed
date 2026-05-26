@@ -11,12 +11,15 @@ CCToolbox.register({
       <section class="panel" aria-label="测速面板">
         <div style="display:flex;align-items:center;gap:8px;margin-bottom:14px">
           <span class="status-dot ready" id="st-statusDot"></span>
-          <span id="st-statusText" style="color:var(--muted);font-size:0.88rem">准备就绪</span>
+          <span id="st-statusText" style="color:var(--muted);font-size:0.88rem;font-weight:700">准备就绪</span>
         </div>
 
-        <div style="text-align:center;padding:10px 0">
-          <span class="speed-number" id="st-speedNumber">0.0</span>
-          <span class="speed-unit">Mbps</span>
+        <div class="speedometer-container">
+          <div class="speedometer-radial">
+            <div class="speedometer-glow"></div>
+            <span class="speed-number" id="st-speedNumber">0.0</span>
+            <span class="speed-unit">Mbps</span>
+          </div>
         </div>
 
         <div class="metric-grid">
@@ -34,7 +37,7 @@ CCToolbox.register({
           </div>
         </div>
 
-        <button class="primary-action" id="st-startButton" type="button">开始测速</button>
+        <button class="primary-action" id="st-startButton" type="button" style="width:100%;margin-top:20px">开始测速</button>
       </section>
 
       <section class="panel-soft" aria-label="测速历史">
