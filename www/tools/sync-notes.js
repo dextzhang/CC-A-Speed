@@ -204,8 +204,8 @@ CCToolbox.register({
     }
 
     function proxyGithub(url) {
-      if (isAndroid) return url;
-      return '/api/github?url=' + encodeURIComponent(url);
+      // GitHub API 原生支持 CORS，所有环境都可以直连
+      return url;
     }
 
     function backupPayload() {
@@ -445,14 +445,22 @@ CCToolbox.register({
     }
 
     async function pushWebdav() {
-      const response = await fetch(proxyWebdav(webdavFileUrl()), {
-        method: 'PUT',
-        headers: {
-          Authorization: authHeader(settings.webdavUser, settings.webdavPass),
-          'Content-Type': 'application/json; charset=utf-8'
-        },
-        body: JSON.stringify(backupPayload(), null, 2)
-      });
+      let response;
+      try {
+        response = await fetch(proxyWebdav(webdavFileUrl()), {
+          method: 'PUT',
+          headers: {
+            Authorization: authHeader(settings.webdavUser, settings.webdavPass),
+            'Content-Type': 'application/json; charset=utf-8'
+          },
+          body: JSON.stringify(backupPayload(), null, 2)
+        });
+      } catch (e) {
+        if (!isAndroid) {
+          throw new Error('坚果云连接失败（浏览器 CORS 限制）。请先运行 npm run serve 启动代理服务器，然后通过 http://localhost:4173 访问');
+        }
+        throw new Error('坚果云连接失败: ' + (e.message || '网络错误'));
+      }
 
       if (response.status === 409) {
         await ensureWebdavFolder();
@@ -476,12 +484,20 @@ CCToolbox.register({
     }
 
     async function pullWebdav() {
-      const response = await fetch(proxyWebdav(webdavFileUrl()), {
-        method: 'GET',
-        headers: {
-          Authorization: authHeader(settings.webdavUser, settings.webdavPass)
+      let response;
+      try {
+        response = await fetch(proxyWebdav(webdavFileUrl()), {
+          method: 'GET',
+          headers: {
+            Authorization: authHeader(settings.webdavUser, settings.webdavPass)
+          }
+        });
+      } catch (e) {
+        if (!isAndroid) {
+          throw new Error('坚果云连接失败（浏览器 CORS 限制）。请先运行 npm run serve 启动代理服务器，然后通过 http://localhost:4173 访问');
         }
-      });
+        throw new Error('坚果云连接失败: ' + (e.message || '网络错误'));
+      }
 
       if (response.status === 404) return [];
       if (!response.ok) {
